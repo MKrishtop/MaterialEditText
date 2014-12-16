@@ -76,10 +76,11 @@ public class MaterialEditText extends EditText {
      */
     private boolean highlightFloatingLabel;
 
-    /**
-     * the base color of the line and the texts. default is black.
-     */
-    private int baseColor;
+    private ColorStateList primaryTextColor;
+    private ColorStateList floatingLabelColor;
+    private ColorStateList hintColor;
+    private ColorStateList underLineColor;
+    private ColorStateList ellipsisColor;
 
     /**
      * inner top padding
@@ -90,11 +91,6 @@ public class MaterialEditText extends EditText {
      * inner bottom padding
      */
     private int innerPaddingBottom;
-
-    /**
-     * the underline's highlight color, and the highlight color of the floating label if app:highlightFloatingLabel is set true in the xml. default is black(when app:darkTheme is false) or white(when app:darkTheme is true)
-     */
-    private int primaryColor;
 
     /**
      * the color for when something is wrong.(e.g. exceeding max characters)
@@ -204,12 +200,34 @@ public class MaterialEditText extends EditText {
         bottomEllipsisSize = getResources().getDimensionPixelSize(R.dimen.bottom_ellipsis_height);
 
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.MaterialEditText);
-        baseColor = typedArray.getColor(R.styleable.MaterialEditText_baseColor, Color.BLACK);
-        ColorStateList colorStateList = new ColorStateList(new int[][]{new int[]{android.R.attr.state_enabled}, EMPTY_STATE_SET}, new int[]{baseColor & 0x00ffffff | 0xdf000000, baseColor & 0x00ffffff | 0x44000000});
-        setTextColor(colorStateList);
+        primaryTextColor = typedArray.getColorStateList(R.styleable.MaterialEditText_primaryTextColor);
+        if (primaryTextColor == null) {
+            primaryTextColor = new ColorStateList(new int[][]{new int[]{android.R.attr.state_enabled}, EMPTY_STATE_SET}, new int[]{Color.BLACK, Color.BLACK});
+        }
+        setTextColor(primaryTextColor);
 
-        primaryColor = typedArray.getColor(R.styleable.MaterialEditText_primaryColor, baseColor);
+        floatingLabelColor = typedArray.getColorStateList(R.styleable.MaterialEditText_floatingLabelColor);
+        if (floatingLabelColor == null) {
+            floatingLabelColor = new ColorStateList(new int[][]{new int[]{android.R.attr.state_enabled}, EMPTY_STATE_SET}, new int[]{Color.GRAY, Color.GRAY});
+        }
+
+        hintColor = typedArray.getColorStateList(R.styleable.MaterialEditText_hintColor);
+        if (hintColor == null) {
+            hintColor = new ColorStateList(new int[][]{new int[]{android.R.attr.state_enabled}, EMPTY_STATE_SET}, new int[]{Color.GRAY, Color.GRAY});
+        }
+
+        underLineColor = typedArray.getColorStateList(R.styleable.MaterialEditText_underLineColor);
+        if (underLineColor == null) {
+            underLineColor = new ColorStateList(new int[][]{new int[]{android.R.attr.state_enabled}, EMPTY_STATE_SET}, new int[]{Color.LTGRAY, Color.LTGRAY});
+        }
+
+        ellipsisColor = typedArray.getColorStateList(R.styleable.MaterialEditText_ellipsisColor);
+        if (ellipsisColor == null) {
+            ellipsisColor = new ColorStateList(new int[][]{new int[]{android.R.attr.state_enabled}, EMPTY_STATE_SET}, new int[]{Color.LTGRAY, Color.LTGRAY});
+        }
+
         setFloatingLabelInternal(typedArray.getInt(R.styleable.MaterialEditText_floatingLabel, 0));
+
         errorColor = typedArray.getColor(R.styleable.MaterialEditText_errorColor, Color.parseColor("#e7492E"));
         maxCharacters = typedArray.getInt(R.styleable.MaterialEditText_maxCharacters, 0);
         singleLineEllipsis = typedArray.getBoolean(R.styleable.MaterialEditText_singleLineEllipsis, false);
@@ -250,12 +268,12 @@ public class MaterialEditText extends EditText {
         if (!TextUtils.isEmpty(getText())) {
             CharSequence text = getText();
             setText(null);
-            setHintTextColor(baseColor & 0x00ffffff | 0x44000000);
+            setHintTextColor(hintColor);
             setText(text);
             floatingLabelFraction = 1;
             floatingLabelShown = true;
         } else {
-            setHintTextColor(baseColor & 0x00ffffff | 0x44000000);
+            setHintTextColor(hintColor);
         }
     }
 
@@ -477,17 +495,6 @@ public class MaterialEditText extends EditText {
                 super.setOnFocusChangeListener(innerFocusChangeListener);
             }
         }
-
-    }
-
-    public void setBaseColor(int color) {
-        baseColor = color;
-        postInvalidate();
-    }
-
-    public void setPrimaryColor(int color) {
-        primaryColor = color;
-        postInvalidate();
     }
 
     private void setFloatingLabelInternal(int mode) {
@@ -495,10 +502,6 @@ public class MaterialEditText extends EditText {
             case FLOATING_LABEL_NORMAL:
                 floatingLabelEnabled = true;
                 highlightFloatingLabel = false;
-                break;
-            case FLOATING_LABEL_HIGHLIGHT:
-                floatingLabelEnabled = true;
-                highlightFloatingLabel = true;
                 break;
             default:
                 floatingLabelEnabled = false;
@@ -728,16 +731,16 @@ public class MaterialEditText extends EditText {
                 paint.setColor(errorColor);
                 canvas.drawRect(getScrollX(), lineStartY, getWidth() + getScrollX(), lineStartY + getPixel(2), paint);
             } else if (!isEnabled()) { // disabled
-                paint.setColor(baseColor & 0x00ffffff | 0x44000000);
+                paint.setColor(underLineColor.getColorForState(EMPTY_STATE_SET, Color.LTGRAY));
                 float interval = getPixel(1);
                 for (float startX = 0; startX < getWidth(); startX += interval * 3) {
                     canvas.drawRect(getScrollX() + startX, lineStartY, getScrollX() + startX + interval, lineStartY + getPixel(1), paint);
                 }
             } else if (hasFocus()) { // focused
-                paint.setColor(primaryColor);
+                paint.setColor(underLineColor.getColorForState(FOCUSED_STATE_SET, Color.LTGRAY));
                 canvas.drawRect(getScrollX(), lineStartY, getWidth() + getScrollX(), lineStartY + getPixel(2), paint);
             } else { // normal
-                paint.setColor(baseColor);
+                paint.setColor(underLineColor.getColorForState(ENABLED_STATE_SET, Color.LTGRAY));
                 canvas.drawRect(getScrollX(), lineStartY, getWidth() + getScrollX(), lineStartY + getPixel(1), paint);
             }
         }
@@ -773,7 +776,7 @@ public class MaterialEditText extends EditText {
         // draw the floating label
         if (floatingLabelEnabled && !TextUtils.isEmpty(floatingLabelText)) {
             // calculate the text color
-            textPaint.setColor((Integer) focusEvaluator.evaluate(focusFraction, getCurrentHintTextColor(), primaryColor));
+            textPaint.setColor((Integer) focusEvaluator.evaluate(focusFraction, getCurrentHintTextColor(), floatingLabelColor.getColorForState(EMPTY_STATE_SET, Color.GRAY)));
 
             // calculate the vertical position
             int start = innerPaddingTop + floatingLabelTextSize + innerComponentsSpacing;
@@ -781,8 +784,8 @@ public class MaterialEditText extends EditText {
             int position = (int) (start - distance * floatingLabelFraction);
 
             // calculate the alpha
-            int alpha = (int) (floatingLabelFraction * 0xff * (0.74f * focusFraction + 0.26f));
-            textPaint.setAlpha(alpha);
+//            int alpha = (int) (floatingLabelFraction * 0xff * (0.74f * focusFraction + 0.26f));
+//            textPaint.setAlpha(alpha);
 
             // draw the floating label
             canvas.drawText(floatingLabelText.toString(), getPaddingLeft() + getScrollX(), position, textPaint);
@@ -790,7 +793,7 @@ public class MaterialEditText extends EditText {
 
         // draw the bottom ellipsis
         if (hasFocus() && singleLineEllipsis && getScrollX() != 0) {
-            paint.setColor(primaryColor);
+            paint.setColor(ellipsisColor.getColorForState(EMPTY_STATE_SET, Color.GRAY));
             float startY = lineStartY + innerComponentsSpacing;
             canvas.drawCircle(bottomEllipsisSize / 2 + getScrollX(), startY + bottomEllipsisSize / 2, bottomEllipsisSize / 2, paint);
             canvas.drawCircle(bottomEllipsisSize * 5 / 2 + getScrollX(), startY + bottomEllipsisSize / 2, bottomEllipsisSize / 2, paint);
