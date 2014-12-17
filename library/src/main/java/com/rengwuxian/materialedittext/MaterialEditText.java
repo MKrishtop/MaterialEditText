@@ -784,8 +784,8 @@ public class MaterialEditText extends EditText {
             int position = (int) (start - distance * floatingLabelFraction);
 
             // calculate the alpha
-//            int alpha = (int) (floatingLabelFraction * 0xff * (0.74f * focusFraction + 0.26f));
-//            textPaint.setAlpha(alpha);
+            int alpha = (int) (floatingLabelFraction * 0xff);
+            textPaint.setAlpha(alpha);
 
             // draw the floating label
             canvas.drawText(floatingLabelText.toString(), getPaddingLeft() + getScrollX(), position, textPaint);
