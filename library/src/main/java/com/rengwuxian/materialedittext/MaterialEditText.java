@@ -270,7 +270,7 @@ public class MaterialEditText extends EditText {
             setText(null);
             setHintTextColor(hintColor);
             setText(text);
-            floatingLabelFraction = 1;
+            floatingLabelFraction = ((float) Color.alpha(hintColor.getDefaultColor())) / 255f;
             floatingLabelShown = true;
         } else {
             setHintTextColor(hintColor);
